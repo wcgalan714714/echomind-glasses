@@ -19,7 +19,6 @@ function getInsights() {
     else insights.push({ title: "Night Note", content: "Anything important for tomorrow?" });
 
     insights.push({ title: "Quick Thought", content: "What's on your mind right now?" });
-
     return insights;
 }
 
@@ -46,10 +45,11 @@ function captureNote() {
     input.value = '';
 }
 
-// Voice capture
+// Voice capture with status
 function startVoiceCapture() {
+    const btn = document.getElementById('voice-btn');
     if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
-        alert("Voice input not supported in this browser.");
+        alert("Voice not supported in this browser.");
         return;
     }
 
@@ -58,12 +58,22 @@ function startVoiceCapture() {
     recognition.lang = 'en-US';
     recognition.interimResults = false;
 
+    btn.textContent = "Listening...";
+    btn.disabled = true;
+
     recognition.onresult = (event) => {
         const text = event.results[0][0].transcript.trim();
         if (text) saveNote(text);
+        btn.textContent = "Voice";
+        btn.disabled = false;
     };
 
-    recognition.onerror = () => alert("Voice capture failed. Try again.");
+    recognition.onerror = () => {
+        alert("Voice capture failed.");
+        btn.textContent = "Voice";
+        btn.disabled = false;
+    };
+
     recognition.start();
 }
 
@@ -71,26 +81,55 @@ function saveNote(text) {
     notes.unshift({ text, timestamp: new Date().toISOString() });
     localStorage.setItem('echomind_notes', JSON.stringify(notes));
     renderInsights();
-    alert(`Saved: "${text}"`);
 }
 
+// History with search + expandable notes + delete
 function showHistory() {
     const panel = document.getElementById('insight-panel');
-    panel.innerHTML = '<h2 style="margin-bottom:16px; color:#00FF88;">All Notes</h2>';
+    panel.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2 style="color:#00FF88;">All Notes</h2>
+            <input type="text" id="search-input" placeholder="Search notes..." class="focusable" style="width:160px; padding:6px 10px;">
+        </div>
+    `;
 
-    if (notes.length === 0) {
-        panel.innerHTML += '<p style="opacity:0.6;">No notes yet.</p>';
+    const searchInput = document.getElementById('search-input');
+    searchInput.oninput = () => renderHistoryList(panel, searchInput.value);
+
+    renderHistoryList(panel, '');
+}
+
+function renderHistoryList(panel, searchTerm = '') {
+    // Remove old list if exists
+    const oldList = document.getElementById('history-list');
+    if (oldList) oldList.remove();
+
+    const listContainer = document.createElement('div');
+    listContainer.id = 'history-list';
+
+    const filteredNotes = notes.filter(note =>
+        note.text.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    if (filteredNotes.length === 0) {
+        listContainer.innerHTML = '<p style="opacity:0.6;">No matching notes.</p>';
     } else {
-        notes.forEach((note) => {
+        filteredNotes.forEach((note, index) => {
             const card = document.createElement('div');
             card.className = 'insight-card focusable';
+            card.tabIndex = 0;
+
             const date = new Date(note.timestamp).toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
-            card.innerHTML = `<small>${date}</small><br>${note.text}`;
-            card.onclick = () => alert(note.text);
-            panel.appendChild(card);
+            card.innerHTML = `<small>${date}</small><br>${note.text.substring(0, 80)}${note.text.length > 80 ? '...' : ''}`;
+
+            card.onclick = () => showNoteDetail(note, index);
+            listContainer.appendChild(card);
         });
     }
 
+    panel.appendChild(listContainer);
+
+    // Back button
     const backBtn = document.createElement('button');
     backBtn.textContent = '← Back';
     backBtn.style.marginTop = '20px';
@@ -98,7 +137,26 @@ function showHistory() {
     panel.appendChild(backBtn);
 }
 
-// Keyboard
+function showNoteDetail(note, index) {
+    const panel = document.getElementById('insight-panel');
+    panel.innerHTML = `
+        <h2 style="margin-bottom:12px; color:#00FF88;">Note</h2>
+        <div class="insight-card" style="margin-bottom:20px; padding:20px; line-height:1.5;">
+            ${note.text}
+        </div>
+        <div style="display:flex; gap:12px;">
+            <button onclick="deleteNote(${index}); showHistory();" class="focusable" style="background:#330000; border-color:#ff4444; color:#ff6666;">Delete</button>
+            <button onclick="showHistory()" class="focusable">Back to List</button>
+        </div>
+    `;
+}
+
+function deleteNote(index) {
+    notes.splice(index, 1);
+    localStorage.setItem('echomind_notes', JSON.stringify(notes));
+}
+
+// Keyboard support (great for Neural Band gestures)
 document.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
         const active = document.activeElement;
