@@ -11,32 +11,46 @@ function updateTime() {
 setInterval(updateTime, 10000);
 updateTime();
 
+// Generate proactive insights
+function getProactiveInsights() {
+    const hour = new Date().getHours();
+    let insights = [];
+
+    if (hour >= 6 && hour < 10) {
+        insights.push({ title: "Morning Focus", content: "What's your top priority today?" });
+    } else if (hour >= 12 && hour < 14) {
+        insights.push({ title: "Midday Reset", content: "Quick breath or hydration check?" });
+    } else if (hour >= 17 && hour < 22) {
+        insights.push({ title: "Evening Reflection", content: "What went well today?" });
+    }
+
+    insights.push({ 
+        title: "Recent Capture", 
+        content: notes.length ? notes[0].text.substring(0, 70) + "..." : "No notes yet — capture something" 
+    });
+
+    return insights;
+}
+
 // Render insights
 function renderInsights() {
     const panel = document.getElementById('insight-panel');
     panel.innerHTML = '';
 
-    const insights = [
-        { 
-            title: "Today's Focus", 
-            content: "Protein: 180g target • IF window open" 
-        },
-        { 
-            title: "Latest Note", 
-            content: notes.length ? notes[0].text.substring(0, 80) + (notes[0].text.length > 80 ? '...' : '') : "No notes yet. Capture something!" 
-        },
-        { 
-            title: "Quick Nudge", 
-            content: "Tesla range check? Gundam deck review? Knee exercises?" 
-        }
-    ];
+    const insights = getProactiveInsights();
 
-    insights.forEach((insight, index) => {
+    insights.forEach(insight => {
         const card = document.createElement('div');
         card.className = 'insight-card focusable';
         card.tabIndex = 0;
         card.innerHTML = `<strong>${insight.title}</strong><br>${insight.content}`;
-        card.onclick = () => alert(`Opened: ${insight.title}`);
+        card.onclick = () => {
+            if (insight.title === "Recent Capture" && notes.length) {
+                alert("Full note:\n" + notes[0].text);
+            } else {
+                alert(insight.content);
+            }
+        };
         panel.appendChild(card);
     });
 }
@@ -57,7 +71,7 @@ function captureNote() {
     renderInsights();
 }
 
-// Keyboard support (D-pad / Enter)
+// Keyboard / gesture support
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
         const active = document.activeElement;
