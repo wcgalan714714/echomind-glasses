@@ -8,20 +8,15 @@ function updateTime() {
 setInterval(updateTime, 10000);
 updateTime();
 
-// Time-aware insights with good spotlight
+// Smart time-aware insights
 function getInsights() {
     const hour = new Date().getHours();
     let insights = [];
 
-    if (hour >= 5 && hour < 11) {
-        insights.push({ title: "Morning Brief", content: "What is your top priority today?" });
-    } else if (hour >= 11 && hour < 15) {
-        insights.push({ title: "Midday Check", content: "Energy level good? Quick reset?" });
-    } else if (hour >= 18 && hour < 23) {
-        insights.push({ title: "Evening Reflection", content: "One win or lesson from today?" });
-    } else {
-        insights.push({ title: "Night Note", content: "Anything to remember for tomorrow?" });
-    }
+    if (hour >= 5 && hour < 11) insights.push({ title: "Morning Brief", content: "What is your single top priority today?" });
+    else if (hour >= 11 && hour < 15) insights.push({ title: "Midday Check", content: "Energy level good? Quick reset?" });
+    else if (hour >= 18 && hour < 23) insights.push({ title: "Evening Reflection", content: "One win or lesson from today?" });
+    else insights.push({ title: "Night Note", content: "Anything important for tomorrow?" });
 
     insights.push({ title: "Quick Thought", content: "What's on your mind right now?" });
 
@@ -42,15 +37,41 @@ function renderInsights() {
     });
 }
 
+// Text capture
 function captureNote() {
     const input = document.getElementById('quick-capture');
     const text = input.value.trim();
     if (!text) return;
+    saveNote(text);
+    input.value = '';
+}
 
+// Voice capture
+function startVoiceCapture() {
+    if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+        alert("Voice input not supported in this browser.");
+        return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+
+    recognition.onresult = (event) => {
+        const text = event.results[0][0].transcript.trim();
+        if (text) saveNote(text);
+    };
+
+    recognition.onerror = () => alert("Voice capture failed. Try again.");
+    recognition.start();
+}
+
+function saveNote(text) {
     notes.unshift({ text, timestamp: new Date().toISOString() });
     localStorage.setItem('echomind_notes', JSON.stringify(notes));
-    input.value = '';
     renderInsights();
+    alert(`Saved: "${text}"`);
 }
 
 function showHistory() {
@@ -77,7 +98,7 @@ function showHistory() {
     panel.appendChild(backBtn);
 }
 
-// Keyboard support
+// Keyboard
 document.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
         const active = document.activeElement;
