@@ -1,7 +1,5 @@
 let notes = JSON.parse(localStorage.getItem('echomind_notes')) || [];
-let feedback = JSON.parse(localStorage.getItem('echomind_feedback')) || {};
 
-// Time
 function updateTime() {
     const now = new Date();
     document.getElementById('time').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -9,29 +7,21 @@ function updateTime() {
 setInterval(updateTime, 10000);
 updateTime();
 
-// Get insights (with basic personalization)
 function getInsights() {
     const hour = new Date().getHours();
     let insights = [];
 
     if (hour >= 5 && hour < 11) {
-        insights.push({ id: "morning", title: "Morning Brief", content: "What is your single top priority today?" });
+        insights.push({ title: "Morning Brief", content: "What is your single top priority today?" });
     } else if (hour >= 11 && hour < 15) {
-        insights.push({ id: "midday", title: "Midday Check", content: "Energy level good? Quick reset?" });
+        insights.push({ title: "Midday Check", content: "Energy level good? Quick reset?" });
     } else if (hour >= 18 && hour < 23) {
-        insights.push({ id: "evening", title: "Evening Reflection", content: "One win or lesson from today?" });
+        insights.push({ title: "Evening Reflection", content: "One win or lesson from today?" });
     } else {
-        insights.push({ id: "night", title: "Night Note", content: "Anything important for tomorrow?" });
+        insights.push({ title: "Night Note", content: "Anything important for tomorrow?" });
     }
 
-    insights.push({ id: "quick", title: "Quick Thought", content: "What's on your mind right now?" });
-
-    // Simple personalization
-    insights.forEach(insight => {
-        insight.priority = feedback[insight.id] || 0;
-    });
-
-    insights.sort((a, b) => b.priority - a.priority);
+    insights.push({ title: "Quick Thought", content: "What's on your mind right now?" });
     return insights;
 }
 
@@ -43,78 +33,23 @@ function renderInsights() {
         const card = document.createElement('div');
         card.className = 'insight-card focusable';
         card.tabIndex = 0;
-        card.dataset.id = insight.id;
         card.innerHTML = `<strong>${insight.title}</strong><br>${insight.content}`;
-        
-        // Tap to start conversation (in-place)
-        card.onclick = () => startCardConversation(card, insight);
+        card.onclick = () => showSimpleMessage(insight.content);
         panel.appendChild(card);
     });
 }
 
-// In-place conversation (keeps other cards visible)
-function startCardConversation(cardElement, insight) {
-    const originalHTML = cardElement.innerHTML;
+function showSimpleMessage(text) {
+    const panel = document.getElementById('insight-panel');
+    const originalContent = panel.innerHTML;
 
-    cardElement.innerHTML = `
-        <strong>${insight.title}</strong><br>
-        <p style="margin: 12px 0 16px 0; font-size: 17px;">${insight.content}</p>
-        <p style="margin-bottom: 12px; opacity: 0.9;">Was this useful?</p>
-        
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-            <button class="focusable" onclick="handleCardResponse(this, '${insight.id}', 'yes', true)">Yes</button>
-            <button class="focusable" onclick="handleCardResponse(this, '${insight.id}', 'no', false)">No</button>
-            <button class="focusable" onclick="handleCardResponse(this, '${insight.id}', 'maybe', false)">Maybe</button>
+    panel.innerHTML = `
+        <div style="padding: 20px; text-align: center;">
+            <p style="font-size: 18px; margin-bottom: 24px; line-height: 1.5;">${text}</p>
+            <button onclick="renderInsights()" class="focusable" style="padding: 14px 28px; font-size: 17px;">Back</button>
         </div>
     `;
 }
-
-// Handle Yes/No/Maybe + follow-up
-function handleCardResponse(button, insightId, response, askFollowUp) {
-    const card = button.closest('.insight-card');
-    const originalHTML = card.innerHTML;
-
-    // Save feedback for learning
-    if (!feedback[insightId]) feedback[insightId] = 0;
-    feedback[insightId] += (response === 'yes') ? 1 : (response === 'no') ? -1 : 0;
-    localStorage.setItem('echomind_feedback', JSON.stringify(feedback));
-
-    if (askFollowUp && response === 'yes') {
-        card.innerHTML = `
-            <strong>Thanks!</strong><br>
-            <p style="margin: 12px 0;">Would you like to see more like this?</p>
-            
-            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
-                <button class="focusable" onclick="finishCardConversation(this, true)">Yes</button>
-                <button class="focusable" onclick="finishCardConversation(this, false)">No</button>
-            </div>
-        `;
-    } else {
-        finishCardConversation(button, false);
-    }
-}
-
-function finishCardConversation(element, positive) {
-    const card = element.closest('.insight-card');
-    
-    if (positive) {
-        card.innerHTML = `
-            <strong>Got it.</strong><br>
-            <p style="margin-top: 10px;">I’ll show you more like this going forward.</p>
-        `;
-    } else {
-        card.innerHTML = `
-            <strong>Thanks for the feedback.</strong>
-        `;
-    }
-
-    // Return to normal cards after short delay
-    setTimeout(() => {
-        renderInsights();
-    }, 1600);
-}
-
-// Keep all other functions (captureNote, voice, history, etc.) the same as the clean version
 
 function captureNote() {
     const input = document.getElementById('quick-capture');
