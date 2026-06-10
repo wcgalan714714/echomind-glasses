@@ -1,6 +1,5 @@
 let notes = JSON.parse(localStorage.getItem('echomind_notes')) || [];
 
-// Time display
 function updateTime() {
     const now = new Date();
     document.getElementById('time').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -8,20 +7,14 @@ function updateTime() {
 setInterval(updateTime, 10000);
 updateTime();
 
-// Spotlighted insight cards (always shown on main screen)
 function getInsights() {
     const hour = new Date().getHours();
     let insights = [];
 
-    if (hour >= 5 && hour < 11) {
-        insights.push({ title: "Morning Brief", content: "What is your single top priority today?" });
-    } else if (hour >= 11 && hour < 15) {
-        insights.push({ title: "Midday Check", content: "Energy level good? Quick reset?" });
-    } else if (hour >= 18 && hour < 23) {
-        insights.push({ title: "Evening Reflection", content: "One win or lesson from today?" });
-    } else {
-        insights.push({ title: "Night Note", content: "Anything important for tomorrow?" });
-    }
+    if (hour >= 5 && hour < 11) insights.push({ title: "Morning Brief", content: "What is your single top priority today?" });
+    else if (hour >= 11 && hour < 15) insights.push({ title: "Midday Check", content: "Energy level good? Quick reset?" });
+    else if (hour >= 18 && hour < 23) insights.push({ title: "Evening Reflection", content: "One win or lesson from today?" });
+    else insights.push({ title: "Night Note", content: "Anything important for tomorrow?" });
 
     insights.push({ title: "Quick Thought", content: "What's on your mind right now?" });
     return insights;
@@ -36,12 +29,26 @@ function renderInsights() {
         card.className = 'insight-card focusable';
         card.tabIndex = 0;
         card.innerHTML = `<strong>${insight.title}</strong><br>${insight.content}`;
-        card.onclick = () => alert(insight.content);
+        
+        // Clean in-app interaction instead of alert()
+        card.onclick = () => showMessage(insight.content);
         panel.appendChild(card);
     });
 }
 
-// Save note with simple category
+// Clean in-app message (no browser popup)
+function showMessage(text) {
+    const panel = document.getElementById('insight-panel');
+    const original = panel.innerHTML;
+
+    panel.innerHTML = `
+        <div style="padding: 20px; text-align: center;">
+            <p style="font-size: 18px; margin-bottom: 24px; line-height: 1.5;">${text}</p>
+            <button onclick="renderInsights()" class="focusable" style="padding: 12px 24px; font-size: 16px;">Back</button>
+        </div>
+    `;
+}
+
 function captureNote() {
     const input = document.getElementById('quick-capture');
     const text = input.value.trim();
@@ -55,7 +62,7 @@ function captureNote() {
 function startVoiceCapture() {
     const btn = document.getElementById('voice-btn');
     if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
-        alert("Voice not supported.");
+        showMessage("Voice input not supported in this browser.");
         return;
     }
 
@@ -77,7 +84,7 @@ function startVoiceCapture() {
     };
 
     recognition.onerror = () => {
-        alert("Voice failed.");
+        showMessage("Voice capture failed.");
         btn.textContent = "Voice";
         btn.disabled = false;
     };
@@ -86,21 +93,16 @@ function startVoiceCapture() {
 }
 
 function saveNote(text, category) {
-    notes.unshift({
-        text: text,
-        category: category,
-        timestamp: new Date().toISOString()
-    });
+    notes.unshift({ text, category, timestamp: new Date().toISOString() });
     localStorage.setItem('echomind_notes', JSON.stringify(notes));
-    renderInsights(); // Refresh cards
+    renderInsights();
 }
 
-// History view
 function showHistory() {
     const panel = document.getElementById('insight-panel');
     panel.innerHTML = `
-        <h2 style="margin-bottom:12px; color:#00FF88;">All Notes</h2>
-        <input type="text" id="search-input" placeholder="Search notes..." class="focusable" style="width:100%; margin-bottom:16px;">
+        <h2 style="margin-bottom:12px; color:#00FF88; font-size:20px;">All Notes</h2>
+        <input type="text" id="search-input" placeholder="Search..." class="focusable" style="width:100%; margin-bottom:14px; font-size:16px;">
     `;
 
     const searchInput = document.getElementById('search-input');
@@ -115,9 +117,9 @@ function renderFilteredHistory(panel, searchTerm = '') {
     const listContainer = document.createElement('div');
     listContainer.id = 'history-list';
 
-    const filtered = notes.filter(note =>
-        note.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (note.category && note.category.toLowerCase().includes(searchTerm.toLowerCase()))
+    const filtered = notes.filter(n =>
+        n.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (n.category && n.category.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     if (filtered.length === 0) {
@@ -127,12 +129,9 @@ function renderFilteredHistory(panel, searchTerm = '') {
             const card = document.createElement('div');
             card.className = 'insight-card focusable';
             card.tabIndex = 0;
-
             const date = new Date(note.timestamp).toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
             const cat = note.category ? ` [${note.category}]` : '';
-
-            card.innerHTML = `<small>${date}${cat}</small><br>${note.text.substring(0, 70)}${note.text.length > 70 ? '...' : ''}`;
-
+            card.innerHTML = `<small>${date}${cat}</small><br>${note.text.substring(0, 65)}${note.text.length > 65 ? '...' : ''}`;
             card.onclick = () => showNoteDetail(note, index);
             listContainer.appendChild(card);
         });
@@ -140,25 +139,23 @@ function renderFilteredHistory(panel, searchTerm = '') {
 
     panel.appendChild(listContainer);
 
-    const backBtn = document.createElement('button');
-    backBtn.textContent = '← Back';
-    backBtn.style.marginTop = '20px';
-    backBtn.onclick = renderInsights;
-    panel.appendChild(backBtn);
+    const back = document.createElement('button');
+    back.textContent = '← Back';
+    back.style.marginTop = '16px';
+    back.onclick = renderInsights;
+    panel.appendChild(back);
 }
 
 function showNoteDetail(note, index) {
     const panel = document.getElementById('insight-panel');
     panel.innerHTML = `
         <h2 style="margin-bottom:12px; color:#00FF88;">Note</h2>
-        <div class="insight-card" style="margin-bottom:20px; padding:20px; line-height:1.5;">
+        <div class="insight-card" style="margin-bottom:20px; padding:18px; font-size:17px; line-height:1.5;">
             <strong>Category:</strong> ${note.category || 'None'}<br><br>
             ${note.text}
         </div>
-        <div style="display:flex; gap:12px; flex-wrap:wrap;">
-            <button onclick="deleteNote(${index}); showHistory();" class="focusable" style="background:#330000; border-color:#ff6666; color:#ff8888;">Delete</button>
-            <button onclick="showHistory()" class="focusable">Back</button>
-        </div>
+        <button onclick="deleteNote(${index}); showHistory()" class="focusable" style="background:#330000; border-color:#ff6666; color:#ff8888; margin-right:10px;">Delete</button>
+        <button onclick="showHistory()" class="focusable">Back</button>
     `;
 }
 
@@ -167,7 +164,6 @@ function deleteNote(index) {
     localStorage.setItem('echomind_notes', JSON.stringify(notes));
 }
 
-// Keyboard support
 document.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
         const active = document.activeElement;
@@ -175,5 +171,4 @@ document.addEventListener('keydown', e => {
     }
 });
 
-// Start the app with spotlighted cards
 renderInsights();
