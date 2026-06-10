@@ -8,7 +8,7 @@ function updateTime() {
 setInterval(updateTime, 10000);
 updateTime();
 
-// Smart insights
+// Spotlighted insight cards (always visible)
 function getInsights() {
     const hour = new Date().getHours();
     let insights = [];
@@ -31,26 +31,4 @@ function renderInsights() {
     const panel = document.getElementById('insight-panel');
     panel.innerHTML = '';
 
-    getInsights().forEach(insight => {
-        const card = document.createElement('div');
-        card.className = 'insight-card focusable';
-        card.tabIndex = 0;
-        card.innerHTML = `<strong>${insight.title}</strong><br>${insight.content}`;
-        card.onclick = () => alert(insight.content);
-        panel.appendChild(card);
-    });
-}
-
-// Save note with nice category selector
-function captureNote() {
-    const input = document.getElementById('quick-capture');
-    const text = input.value.trim();
-    if (!text) return;
-
-    showCategorySelector(text, () => {
-        input.value = '';
-    });
-}
-
-function startVoiceCapture() {
-    const btn = document.getElementById('voice-btn
+    getInsights().forEach(insight
