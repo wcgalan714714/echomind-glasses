@@ -1,12 +1,7 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-    width: 600px;
-    height: 600px;
+    width: 600px; height: 600px;
     background: #000000;
     color: #00FF88;
     font-family: system-ui, -apple-system, sans-serif;
@@ -30,15 +25,9 @@ body {
     border-bottom: 1px solid #00FF8833;
 }
 
-h1 {
-    font-size: 21px;
-    letter-spacing: 0.5px;
-}
+h1 { font-size: 21px; letter-spacing: 0.5px; }
 
-.time {
-    font-size: 14.5px;
-    opacity: 0.8;
-}
+.time { font-size: 14.5px; opacity: 0.8; }
 
 .insight-panel {
     flex: 1;
@@ -58,11 +47,8 @@ h1 {
     cursor: pointer;
 }
 
-.insight-card:active {
-    background: rgba(0, 255, 136, 0.18);
-}
+.insight-card:active { background: rgba(0, 255, 136, 0.18); }
 
-/* Compact bottom-right controls */
 .controls {
     position: absolute;
     bottom: 24px;
@@ -74,11 +60,7 @@ h1 {
     z-index: 10;
 }
 
-.capture-bar {
-    display: flex;
-    gap: 8px;
-    width: 210px;
-}
+.capture-bar { display: flex; gap: 6px; width: 240px; }
 
 .focusable {
     background: #0a0a0a;
@@ -89,8 +71,4 @@ h1 {
     font-size: 14px;
 }
 
-button {
-    padding: 8px 14px;
-    font-size: 13.5px;
-    white-space: nowrap;
-}
+button { padding: 8px 12px; font-size: 13.5px; white-space: nowrap; }
